@@ -15,6 +15,7 @@ A WordPress plugin that adds TOTP-based two-factor authentication (2FA) to the s
 
 ![Settings](https://raw.githubusercontent.com/mrshahbazdev/two-factor-guard/main/screenshots/settings.png)
 ![Profile Setup](https://raw.githubusercontent.com/mrshahbazdev/two-factor-guard/main/screenshots/profile.png)
+![Login Form](https://raw.githubusercontent.com/mrshahbazdev/two-factor-guard/main/screenshots/login.png)
 
 ## Installation
 

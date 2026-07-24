@@ -1,0 +1,22 @@
+label[for="tfg_code"] {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+input#tfg_code {
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    max-width: 200px;
+    margin-bottom: 16px;
+}
+
+input#tfg_code:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}

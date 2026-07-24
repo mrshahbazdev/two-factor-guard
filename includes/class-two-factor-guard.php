@@ -28,7 +28,9 @@ class Two_Factor_Guard {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'save_settings' ) );
+		add_action( 'admin_init', array( __CLASS__, 'handle_profile_actions' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'login_enqueue_scripts', array( __CLASS__, 'login_assets' ) );
 
 		add_action( 'show_user_profile', array( __CLASS__, 'render_user_profile' ) );
 		add_action( 'edit_user_profile', array( __CLASS__, 'render_user_profile' ) );
@@ -81,7 +83,22 @@ class Two_Factor_Guard {
 			return;
 		}
 		wp_enqueue_style( 'tfg-admin', TFG_URL . 'assets/css/admin.css', array(), TFG_VERSION );
-		wp_enqueue_script( 'tfg-admin', TFG_URL . 'assets/js/admin.js', array(), TFG_VERSION, true );
+		wp_enqueue_script( 'tfg-admin', TFG_URL . 'assets/js/admin.js', array( 'jquery' ), TFG_VERSION, true );
+		wp_localize_script(
+			'tfg-admin',
+			'tfg_i18n',
+			array(
+				'copied' => __( 'Copied!', 'two-factor-guard' ),
+				'copy'   => __( 'Copy', 'two-factor-guard' ),
+			)
+		);
+	}
+
+	/**
+	 * Enqueue login assets.
+	 */
+	public static function login_assets() {
+		wp_enqueue_style( 'tfg-login', TFG_URL . 'assets/css/login.css', array(), TFG_VERSION );
 	}
 
 	/**
@@ -120,6 +137,7 @@ class Two_Factor_Guard {
 
 		$settings = self::get_settings();
 		$roles    = wp_roles()->get_names();
+		$stats    = self::get_stats();
 		?>
 		<div class="wrap tfg-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -128,36 +146,116 @@ class Two_Factor_Guard {
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'two-factor-guard' ); ?></p></div>
 			<?php endif; ?>
 
+			<div class="tfg-summary">
+				<div class="tfg-summary-card total">
+					<span class="tfg-summary-label"><?php esc_html_e( 'Total Users', 'two-factor-guard' ); ?></span>
+					<span class="tfg-summary-value"><?php echo esc_html( number_format_i18n( $stats['total'] ) ); ?></span>
+				</div>
+				<div class="tfg-summary-card enabled">
+					<span class="tfg-summary-label"><?php esc_html_e( '2FA Enabled', 'two-factor-guard' ); ?></span>
+					<span class="tfg-summary-value"><?php echo esc_html( number_format_i18n( $stats['enabled'] ) ); ?></span>
+				</div>
+				<div class="tfg-summary-card enforced">
+					<span class="tfg-summary-label"><?php esc_html_e( 'Enforced Roles', 'two-factor-guard' ); ?></span>
+					<span class="tfg-summary-value"><?php echo esc_html( number_format_i18n( $stats['enforced'] ) ); ?></span>
+				</div>
+			</div>
+
 			<form method="post" class="tfg-form">
 				<?php wp_nonce_field( 'tfg_settings' ); ?>
 
 				<div class="tfg-card">
 					<h2><?php esc_html_e( 'Global Settings', 'two-factor-guard' ); ?></h2>
-					<label class="tfg-toggle">
-						<input type="checkbox" name="tfg_enabled" value="1" <?php checked( 1, $settings['enabled'] ); ?>>
-						<span><?php esc_html_e( 'Enable two-factor authentication', 'two-factor-guard' ); ?></span>
-					</label>
-					<label class="tfg-toggle">
-						<input type="checkbox" name="tfg_allow_opt_in" value="1" <?php checked( 1, $settings['allow_opt_in'] ); ?>>
-						<span><?php esc_html_e( 'Allow users to opt in from their profile', 'two-factor-guard' ); ?></span>
-					</label>
+					<div class="tfg-toggles">
+						<label class="tfg-toggle">
+							<input type="checkbox" name="tfg_enabled" value="1" <?php checked( 1, $settings['enabled'] ); ?>>
+							<span class="tfg-slider"></span>
+							<span class="tfg-label-text"><?php esc_html_e( 'Enable two-factor authentication', 'two-factor-guard' ); ?></span>
+						</label>
+						<label class="tfg-toggle">
+							<input type="checkbox" name="tfg_allow_opt_in" value="1" <?php checked( 1, $settings['allow_opt_in'] ); ?>>
+							<span class="tfg-slider"></span>
+							<span class="tfg-label-text"><?php esc_html_e( 'Allow users to opt in from their profile', 'two-factor-guard' ); ?></span>
+						</label>
+					</div>
 				</div>
 
 				<div class="tfg-card">
 					<h2><?php esc_html_e( 'Enforce for Roles', 'two-factor-guard' ); ?></h2>
 					<p class="description"><?php esc_html_e( 'Selected roles must set up 2FA and will be prompted for a code on login.', 'two-factor-guard' ); ?></p>
-					<?php foreach ( $roles as $role => $label ) : ?>
-						<label class="tfg-check">
-							<input type="checkbox" name="tfg_enforce[]" value="<?php echo esc_attr( $role ); ?>" <?php checked( in_array( $role, $settings['enforce'], true ) ); ?>>
-							<span><?php echo esc_html( translate_user_role( $label ) ); ?></span>
-						</label>
-					<?php endforeach; ?>
+					<div class="tfg-roles">
+						<?php foreach ( $roles as $role => $label ) : ?>
+							<label class="tfg-check">
+								<input type="checkbox" name="tfg_enforce[]" value="<?php echo esc_attr( $role ); ?>" <?php checked( in_array( $role, $settings['enforce'], true ) ); ?>>
+								<span class="tfg-checkmark"></span>
+								<span><?php echo esc_html( translate_user_role( $label ) ); ?></span>
+							</label>
+						<?php endforeach; ?>
+					</div>
 				</div>
 
-				<?php submit_button( __( 'Save Settings', 'two-factor-guard' ), 'primary', 'tfg_save' ); ?>
+				<?php submit_button( __( 'Save Settings', 'two-factor-guard' ), 'primary tfg-btn', 'tfg_save' ); ?>
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Get 2FA statistics.
+     *
+     * @return array
+     */
+	public static function get_stats() {
+		global $wpdb;
+		$total    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users}" );
+		$enabled  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT user_id) FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value = '1'", self::META_ENABLED ) );
+		$settings = self::get_settings();
+		return array(
+			'total'    => $total,
+			'enabled'  => $enabled,
+			'enforced' => count( $settings['enforce'] ),
+		);
+	}
+
+	/**
+	 * Handle profile form actions.
+	 */
+	public static function handle_profile_actions() {
+		if ( ! isset( $_POST['_tfg_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_tfg_nonce'] ) ), 'tfg_profile' ) ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['tfg_action'] ) || ! isset( $_POST['user_id'] ) ) {
+			return;
+		}
+
+		$user_id = absint( $_POST['user_id'] );
+		if ( ! current_user_can( 'edit_user', $user_id ) ) {
+			return;
+		}
+
+		$action = sanitize_text_field( wp_unslash( $_POST['tfg_action'] ) );
+		if ( 'regenerate_secret' === $action ) {
+			$secret = self::generate_secret();
+			update_user_meta( $user_id, self::META_SECRET, $secret );
+			update_user_meta( $user_id, self::META_ENABLED, 0 );
+			update_user_meta( $user_id, self::META_CONFIRMED, 0 );
+			update_user_meta( $user_id, self::META_BACKUP, array() );
+			wp_safe_redirect( add_query_arg( 'tfg_regenerated', '1', wp_get_referer() ) );
+			exit;
+		}
+
+		if ( 'regenerate_backup' === $action ) {
+			$secret = get_user_meta( $user_id, self::META_SECRET, true );
+			if ( ! $secret ) {
+				$secret = self::generate_secret();
+				update_user_meta( $user_id, self::META_SECRET, $secret );
+			}
+			$backup = self::generate_backup_codes( 8 );
+			update_user_meta( $user_id, self::META_BACKUP, $backup );
+			wp_safe_redirect( add_query_arg( 'tfg_backup', '1', wp_get_referer() ) );
+			exit;
+		}
 	}
 
 	/**
@@ -184,8 +282,6 @@ class Two_Factor_Guard {
 		}
 
 		$site_name = get_bloginfo( 'name' );
-		$otpauth   = '';
-		$qr_url    = '';
 
 		if ( ! $secret ) {
 			$secret = self::generate_secret();
@@ -195,39 +291,71 @@ class Two_Factor_Guard {
 		}
 
 		$otpauth = 'otpauth://totp/' . rawurlencode( $site_name . ':' . $user->user_login ) . '?secret=' . $secret . '&issuer=' . rawurlencode( $site_name );
-		$qr_url  = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . rawurlencode( $otpauth );
+		$qr_url  = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' . rawurlencode( $otpauth );
 
 		wp_nonce_field( 'tfg_profile', '_tfg_nonce' );
 		?>
 		<div class="tfg-profile-section">
-			<h2><?php esc_html_e( 'Two Factor Guard', 'two-factor-guard' ); ?></h2>
+			<div class="tfg-profile-header">
+				<h2><?php esc_html_e( 'Two Factor Guard', 'two-factor-guard' ); ?></h2>
+				<?php if ( $enabled && $confirmed ) : ?>
+					<span class="tfg-badge enabled"><?php esc_html_e( '2FA Enabled', 'two-factor-guard' ); ?></span>
+				<?php else : ?>
+					<span class="tfg-badge disabled"><?php esc_html_e( '2FA Not Enabled', 'two-factor-guard' ); ?></span>
+				<?php endif; ?>
+			</div>
 
-			<?php if ( $enabled && $confirmed ) : ?>
-				<div class="tfg-status enabled"><?php esc_html_e( '2FA is enabled for this account.', 'two-factor-guard' ); ?></div>
-			<?php else : ?>
-				<div class="tfg-status disabled"><?php esc_html_e( '2FA is not enabled yet. Scan the QR code and enter a code to confirm.', 'two-factor-guard' ); ?></div>
+			<?php if ( isset( $_GET['tfg_regenerated'] ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'A new secret has been generated. Scan the QR code again.', 'two-factor-guard' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['tfg_backup'] ) ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'New backup codes generated.', 'two-factor-guard' ); ?></p></div>
 			<?php endif; ?>
 
-			<div class="tfg-grid">
-				<div class="tfg-card">
-					<h3><?php esc_html_e( 'Step 1: Scan QR Code', 'two-factor-guard' ); ?></h3>
+			<div class="tfg-steps">
+				<div class="tfg-step-card">
+					<div class="tfg-step-number">1</div>
+					<h3><?php esc_html_e( 'Scan QR Code', 'two-factor-guard' ); ?></h3>
 					<img src="<?php echo esc_url( $qr_url ); ?>" alt="<?php esc_attr_e( 'QR Code', 'two-factor-guard' ); ?>" class="tfg-qr">
-					<p><strong><?php esc_html_e( 'Secret:', 'two-factor-guard' ); ?></strong> <code class="tfg-secret"><?php echo esc_html( $secret ); ?></code></p>
+					<div class="tfg-secret-row">
+						<code class="tfg-secret" id="tfg-secret"><?php echo esc_html( $secret ); ?></code>
+						<button type="button" class="button tfg-copy" data-target="#tfg-secret"><?php esc_html_e( 'Copy', 'two-factor-guard' ); ?></button>
+					</div>
+					<?php if ( $enabled ) : ?>
+						<form method="post" class="tfg-inline-form" onsubmit="return confirm('<?php esc_attr_e( 'Regenerating the secret will disable 2FA until you verify again. Continue?', 'two-factor-guard' ); ?>');">
+							<?php wp_nonce_field( 'tfg_profile' ); ?>
+							<input type="hidden" name="user_id" value="<?php echo esc_attr( $user->ID ); ?>">
+							<input type="hidden" name="tfg_action" value="regenerate_secret">
+							<button type="submit" class="button"><?php esc_html_e( 'Regenerate Secret', 'two-factor-guard' ); ?></button>
+						</form>
+					<?php endif; ?>
 				</div>
 
-				<div class="tfg-card">
-					<h3><?php esc_html_e( 'Step 2: Verify Code', 'two-factor-guard' ); ?></h3>
+				<div class="tfg-step-card">
+					<div class="tfg-step-number">2</div>
+					<h3><?php esc_html_e( 'Verify & Enable', 'two-factor-guard' ); ?></h3>
+					<p class="description"><?php esc_html_e( 'Enter the 6-digit code from your authenticator app and enable 2FA.', 'two-factor-guard' ); ?></p>
 					<input type="text" name="tfg_verify_code" id="tfg_verify_code" class="regular-text" placeholder="<?php esc_attr_e( 'Enter 6-digit code', 'two-factor-guard' ); ?>">
 					<label class="tfg-toggle">
 						<input type="checkbox" name="tfg_enable_2fa" id="tfg_enable_2fa" value="1" <?php checked( true, $enabled ); ?>>
-						<span><?php esc_html_e( 'Enable 2FA for my account', 'two-factor-guard' ); ?></span>
+						<span class="tfg-slider"></span>
+						<span class="tfg-label-text"><?php esc_html_e( 'Enable 2FA for my account', 'two-factor-guard' ); ?></span>
 					</label>
 				</div>
 
 				<?php if ( ! empty( $backup_codes ) ) : ?>
-					<div class="tfg-card">
-						<h3><?php esc_html_e( 'Backup Codes', 'two-factor-guard' ); ?></h3>
-						<p class="description"><?php esc_html_e( 'Save these one-time codes in a safe place.', 'two-factor-guard' ); ?></p>
+					<div class="tfg-step-card full">
+						<div class="tfg-step-number">3</div>
+						<div class="tfg-step-header">
+							<h3><?php esc_html_e( 'Backup Codes', 'two-factor-guard' ); ?></h3>
+							<form method="post" class="tfg-inline-form">
+								<?php wp_nonce_field( 'tfg_profile' ); ?>
+								<input type="hidden" name="user_id" value="<?php echo esc_attr( $user->ID ); ?>">
+								<input type="hidden" name="tfg_action" value="regenerate_backup">
+								<button type="submit" class="button"><?php esc_html_e( 'Regenerate Codes', 'two-factor-guard' ); ?></button>
+							</form>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save these one-time codes in a safe place. Each code can only be used once.', 'two-factor-guard' ); ?></p>
 						<ul class="tfg-codes">
 							<?php foreach ( $backup_codes as $code ) : ?>
 								<li><code><?php echo esc_html( $code ); ?></code></li>
@@ -255,6 +383,10 @@ class Two_Factor_Guard {
 		}
 
 		if ( ! current_user_can( 'edit_user', $user_id ) ) {
+			return;
+		}
+
+		if ( isset( $_POST['tfg_action'] ) ) {
 			return;
 		}
 
