@@ -1,0 +1,132 @@
+.tfg-wrap {
+    max-width: 1000px;
+}
+
+.tfg-wrap h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.tfg-form {
+    margin-top: 20px;
+}
+
+.tfg-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tfg-card:hover {
+    border-color: #2271b1;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.tfg-card h2,
+.tfg-card h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-size: 1.15rem;
+}
+
+.tfg-toggle,
+.tfg-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.tfg-toggle input[type="checkbox"],
+.tfg-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.tfg-status {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.tfg-status.enabled {
+    background: #e5f5e8;
+    color: #00a32a;
+}
+
+.tfg-status.disabled {
+    background: #fff8e5;
+    color: #b35900;
+}
+
+.tfg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.tfg-qr {
+    display: block;
+    max-width: 200px;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.tfg-secret {
+    background: #f6f7f7;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.tfg-codes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.tfg-codes li code {
+    display: block;
+    background: #f0f6fc;
+    color: #2271b1;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.tfg-profile-section {
+    margin: 25px 0;
+    padding-top: 20px;
+    border-top: 1px solid #c3c4c7;
+}
+
+.tfg-profile-section h2 {
+    margin-bottom: 15px;
+}
+
+#tfg_verify_code {
+    max-width: 220px;
+    margin-bottom: 10px;
+}
+
+@media screen and (max-width: 782px) {
+    .tfg-grid {
+        grid-template-columns: 1fr;
+    }
+}
